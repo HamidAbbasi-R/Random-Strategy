@@ -21,7 +21,7 @@ single_simulation(
     show_figs       = True,
     oneD_hist       = False,
     twoD_hist       = False,
-    durations_hist  = False,
+    durations_hist  = True,
     capital_curve   = True,
     save_results    = False,
     )
