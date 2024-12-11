@@ -1,6 +1,12 @@
 # Random Trading Strategy
 The aim of this project is to create a simple trading strategy based on random entries. The idea is that if no technical anlaysis and no fundamental analysis is used, the only way to make money is to have a good risk management. Monte Carlo simulations will be used to test the strategy.
 
+<!-- table of contents -->
+## Table of Contents
+- [Random entries](#random-entries)
+- [Risk management](#risk-management)
+- [Results](#results)
+
 # Random entries
 Entries are made purely randomly. The first trade is 50% long and 50% short. After the first trade is exited, the following positions are opened with a predefined probability based on the last trade. For instance if the last trade was a winner, the probability of going the same direction for the next trade is higher (or maybe lower based on the user discretion). Let's say the probability of going the same direction after a winner is 75%. It means that the next trade will be 75% the same direction as the last trade and 25% the opposite direction given that the last trade was a winner. If the last trade was a loser, the probability of going the same direction is 25% and the probability of going the opposite direction is 75%.
 
