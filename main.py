@@ -47,7 +47,7 @@ def single_simulation(
     # simulate the strategy N_test times
     N_test = 1 if debug else N_test
     out = [None]*N_test
-    for i in tqdm(range(N_test)):
+    for i in (range(N_test)):
         out[i] = RandomStrategy(
             OHLC=OHLC,
             asset=asset,
