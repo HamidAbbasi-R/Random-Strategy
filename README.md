@@ -43,3 +43,4 @@ This graph shows that if the mode crosses below the trigger level of -5%, the ov
 - One huge improvement would be to use parallel processing since the Monte Carlo simulations are independent of each other. For instance, I used 5000 for a given time window and they are entirely independent of each other. For this reason, consider using [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) package.
 - The documentation is not complete and the I am not happy with the structure of the code either. A more object oriented approach would be better.
 - This exact strategy is also written in MQL5 and would be nice to add it here as well. The MQL5 backtesting is more robust and it would be nice to compare the results. But the results are not easily convertible to be used in python.
+- Also backtesting could be done in vectorized form (look at [vectorbt](https://vectorbt.dev/)) to immensely speed up the process.
