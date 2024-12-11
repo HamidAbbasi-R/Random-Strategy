@@ -33,7 +33,7 @@ ADX_threshold = 0
 ADX_condition = 'trade-above'
 
 # DEBUG OPTIONS
-debug = True
+debug = False
 
 
 end_time = pd.to_datetime('today').strftime('%Y-%m-%d %H:%M:%S') if end_time == 'now' else end_time
