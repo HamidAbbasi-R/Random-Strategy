@@ -1,0 +1,231 @@
+//@version=5
+var int N_trades=0 
+strategy(
+     "Hamid's strategy", 
+     "Hamid's", 
+     overlay = true,
+     currency = currency.USD,
+     initial_capital = 50000,
+     use_bar_magnifier = false,
+     pyramiding = 2
+    //  margin_long = 3.33,        // maximum margin is 30
+    //  margin_short = 3.33        // maximum margin is 30
+ )
+
+int     N = input.int(4000, title = "Number of simulated trades", minval=10, maxval = 8000, step=1)
+strat = input.string("Random", "Trading strategy", ["Random","MACD"])
+int fastLength_MACD = input.int(12, title = "Fast moving average", group = "MACD")
+int slowlength_MACD = input.int(26, title = "Slow moving average", group = "MACD")
+int MACDLength_MACD = input.int(9, title = "MACD length", group = "MACD")
+int     seed = input(1, title = "Seed", group = "Random Strategy")
+sessions = input.string("All", "Trading sessions", ["All", "LDN", "LDN & NY"], group = "Time")
+isMartingale = input.string("Off", title = "Martingale Strategy", options = ["Off", "Constant True Leverage, Increase Risk", "Increase True Leverage & Risk"], group = "Risk Management")
+MartingaleMultiplier = input.float(2.0, title = "Martingale Multiplier", minval=1.05, step=0.05, group = "Risk Management")
+// RRDecrement = input.float(0.9, title = "Reward to Risk Decrement After Loss", minval=0.1, step=0.05, group = "Risk Management")
+float   TL = input.float(10., title = "True Leverage", minval = 0.1, step = 0.1, group = "Risk Management")
+float   RR = input.float(1., title = "Reward to Risk ratio", minval = 0.1, step = 0.1, group = "Risk Management")
+float   RT = input.float(1., title = "Risk per Trade (%)", minval = 0.01, maxval = 50, step = 0.1, group = "Risk Management")/100.
+isTrailing = input.bool(true, title = "Trailing Stop", group = "Risk Management")
+isScalingIn = input.bool(false, title = "Scaling In", group = "Scaling")
+float   ScaleInMult = input.float(50., title = "Scaling in at %TP (%)", minval=5., maxval=95., step=1., group = "Scaling")/100
+float   qtyScaleIn = input.float(50., title = "%PS for scaling in (%)", minval=5., maxval=95., step=1., group = "Scaling")/100
+isScalingOut = input.bool(false, title = "Scaling Out", group = "Scaling")
+float   ScaleOutMult = input.float(50., title = "Scaling out at %SL (%)", minval=5., maxval=95., step=1., group = "Scaling")/100
+float   qtyScaleOut = input.float(50., title = "%PS for scaling out (%)", minval=5., maxval=95., step=1., group = "Scaling")
+strategy.risk.max_position_size(10000000)
+// DEFINING VARAIBLES
+var bool inTime = false
+var bool scaledOut = false
+var bool scalingout = false
+var bool inTrade = false
+var float entryPrice = na
+var float stopLoss   = na
+var float takeProfit = na
+var float trailPriceActivationLevel = na
+var float positionSize = na
+var float positionSizeTrade = na
+var float maxAllowedLoss = na
+var float RiskTrade = na
+var float TrueLeverage = na
+// var float RewardRisk = na
+var float priceDiff = na
+var float priceDiffTrade = na
+var float trailingStopLong = na
+var float trailingStopShort = na
+var float trailingStopOffset = na
+var float theoreticalStopPriceLong = na
+var float theoreticalStopPriceShort = na
+var int dir = 1         // trade direction; buy (1) or sell (2)
+
+
+// DEFINING FUNCTIONS
+calcContracts(accountMoney) =>
+    strategy.convert_to_symbol(accountMoney) / syminfo.pointvalue / close
+
+//@version=5
+MACD_strat(src, fastLength_MACD, slowlength_MACD, macd) =>
+    MACD = ta.ema(src, fastLength_MACD) - ta.ema(src, slowlength_MACD)
+    aMACD = ta.ema(MACD, MACDLength_MACD)
+    delta = MACD - aMACD
+    crossover = ta.crossover(delta, 0)
+    crossunder = ta.crossunder(delta, 0)
+    dir_MACD = 0
+    if crossover
+        dir_MACD := 1
+    else if crossunder
+        dir_MACD := 2
+    else
+        dir_MACD := 0
+    dir_MACD
+
+
+// TIME MANAGEMENT
+switch sessions
+    "All"           => inTime := true
+    "LDN"        => inTime := not na(time(timeframe.period, "0300-1200", timezone = syminfo.timezone))
+    "LDN & NY"   => inTime := not na(time(timeframe.period, "0300-1800", timezone = syminfo.timezone))
+
+dir_MACD = MACD_strat(close,fastLength_MACD, slowlength_MACD, MACDLength_MACD) 
+if inTime
+    // POSITION SIZE AND RISK MANAGEMENT
+    if isMartingale != "Off" and N_trades > 0
+        if strategy.wintrades > strategy.wintrades[1]
+            RiskTrade := RT
+            TrueLeverage := TL
+            // RewardRisk := RR
+        if strategy.losstrades > strategy.losstrades[1]
+            RiskTrade := RiskTrade * MartingaleMultiplier
+            TrueLeverage := isMartingale=="Constant True Leverage, Increase Risk" ?  TrueLeverage : TrueLeverage * MartingaleMultiplier 
+            // RewardRisk := RewardRisk * RRDecrement
+    else
+        RiskTrade := RT
+        TrueLeverage := TL
+        // RewardRisk := RR
+
+    positionSize    := calcContracts(strategy.equity * TrueLeverage)              // in base currency 
+    maxAllowedLoss  := calcContracts(strategy.equity * RiskTrade)*close        // in quote currency
+    priceDiff      := maxAllowedLoss / positionSize / syminfo.mintick  // in ticks
+
+    // theoreticalStopPrice for both long and short positions (only one will be used for a given trade, depending on the direction of the trade)
+    // theoreticalStopPriceLong    := high - priceDiff * syminfo.mintick
+    // theoreticalStopPriceShort   := low  + priceDiff * syminfo.mintick
+    theoreticalStopPriceLong    := close - priceDiff * syminfo.mintick
+    theoreticalStopPriceShort   := close + priceDiff * syminfo.mintick
+
+
+    // if not in trade -> start a new random position
+    if strategy.position_size == 0.0 and N_trades<N
+        scaledOut := false
+        trailingStopShort := na
+        trailingStopLong  := na
+        
+        // randomly buy (1) or sell (2)
+        dir := switch strat
+            "Random"    => math.round(math.random(1,2, seed))
+            "MACD"      => dir_MACD
+             
+        // SL and TP prices
+        positionSizeTrade := positionSize
+        priceDiffTrade := priceDiff
+        entryPrice := close
+        takeProfit  := dir==1 ? close + RR*priceDiff * syminfo.mintick    : close - RR*priceDiff * syminfo.mintick
+        trailPriceActivationLevel  := dir==1 ? high : low
+        stopLoss := dir==1 ? theoreticalStopPriceLong : theoreticalStopPriceShort
+
+        if dir != 0 
+            N_trades += 1
+            // entry and exit
+            strategy.entry(
+                 id = dir==1 ? "buy" : "sell", 
+                 direction = dir==1 ? strategy.long : strategy.short, 
+                 qty = positionSizeTrade)
+
+            strategy.exit(
+                 "exit", 
+                 from_entry = dir==1 ? "buy" : "sell", 
+                 stop = stopLoss,
+                 limit = takeProfit, 
+                 trail_price = isTrailing ? trailPriceActivationLevel : na, 
+                 trail_offset = isTrailing ? priceDiffTrade : na, 
+                 comment_loss = "SL", 
+                 comment_profit = "TP", 
+                 comment_trailing = isTrailing ? "TSL" : na)
+
+
+    // SCALING IN
+    if ((dir==1 and (close - entryPrice) > ScaleInMult*(takeProfit - entryPrice)) or (dir==2 and (entryPrice - close) > ScaleInMult*(entryPrice - takeProfit))) and strategy.opentrades==1 and isScalingIn and not scaledOut
+        strategy.entry(
+             id = "SI",         // scale in
+             direction = dir==1 ? strategy.long : strategy.short, 
+             qty = positionSizeTrade*qtyScaleIn)
+        strategy.exit(
+             "exit Scale", 
+             from_entry = "SI",
+             limit = takeProfit, 
+             stop = dir==1 ? high-priceDiffTrade*syminfo.mintick : low+priceDiffTrade*syminfo.mintick,
+             trail_price = isTrailing ? dir==1 ? high : low : na, 
+             trail_offset = isTrailing ? priceDiffTrade : na,
+             comment_loss = "SL SI",        // SI: scale in
+             comment_profit = "TP SI", 
+             comment_trailing = isTrailing ? "TSL SI" : na)
+
+    // SCALING OUT
+    if ((dir==1 and entryPrice-close > ScaleOutMult*(entryPrice - stopLoss)) or (dir==2 and close-entryPrice > ScaleOutMult*(stopLoss - entryPrice))) and strategy.opentrades==1 and isScalingOut and not scaledOut
+        scaledOut := true
+        strategy.close(
+             id = dir==1 ? "buy" : "sell",
+             qty_percent = qtyScaleOut,
+             comment = "SO")
+
+
+// VISUALIZATION
+// trailing stop visualization
+if dir == 1
+    if na(trailingStopLong) 
+        trailingStopLong := stopLoss
+        
+    else if trailingStopLong == stopLoss and high > trailPriceActivationLevel
+        trailingStopLong := theoreticalStopPriceLong
+
+    else if theoreticalStopPriceLong > trailingStopLong
+        trailingStopLong := theoreticalStopPriceLong
+
+
+if dir == 2
+    if na(trailingStopShort) 
+        trailingStopShort := stopLoss
+        
+    else if trailingStopShort == stopLoss and low < trailPriceActivationLevel
+        trailingStopShort := theoreticalStopPriceShort
+
+    else if theoreticalStopPriceShort < trailingStopShort
+        trailingStopShort := theoreticalStopPriceShort
+
+// plot commands
+
+plot(
+     not isTrailing ? strategy.position_size!=0 ? stopLoss : na : na,
+     "Stop Loss", 
+     color = color.red, 
+     style = plot.style_linebr,
+     linewidth = 2)
+plot(
+     isTrailing ? strategy.position_size!=0 ? trailingStopLong : na : na,
+     "Trailing Stop Long", 
+     color = color.red, 
+     style = plot.style_linebr,
+     linewidth = 2)
+plot(
+     isTrailing ? strategy.position_size!=0 ? trailingStopShort : na : na,
+     "Trailing Stop Short", 
+     color = color.red, 
+     style = plot.style_linebr,
+     linewidth = 2)
+plot(
+     strategy.position_size!=0 ? takeProfit: na,
+     "TP", 
+     color.green, 
+     style = plot.style_linebr,
+     linewidth = 2)
+
+// plot(RiskTrade)
