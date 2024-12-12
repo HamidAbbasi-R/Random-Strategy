@@ -25,6 +25,7 @@ def single_simulation(
     true_leverage = 2,
     ADX_threshold = 30,
     ADX_condition = 'trade-above',
+    seed = None,
     ## VISUALIZATION PARAMETERS
     debug           = False,
     show_figs       = False,
@@ -58,6 +59,7 @@ def single_simulation(
             ADX_threshold=ADX_threshold,
             ADX_condition=ADX_condition,
             cut_off=cut_off,
+            seed = seed*i if seed is not None else None,
             trailing_stop=trailing_stop,
             initial_capital=initial_capital,     
             indicators=indicators,

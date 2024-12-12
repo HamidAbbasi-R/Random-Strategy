@@ -7,8 +7,8 @@ single_simulation(
     duration = '8h',
     interval = '5m',
     initial_capital = 50000,        # initial capital in USD
-    N_test = 50,
-    RRR = 1,
+    N_test = 5000,
+    RRR = 2,
     risk_per_trade = 0.5,
     P_win = 0.5,
     trailing_stop = False,
@@ -16,13 +16,13 @@ single_simulation(
     true_leverage = 2.5,
     ADX_threshold = 0,
     ADX_condition = 'trade-above',
+    seed = 1,            # seed for reproducibility (anything but 0)
     ## VISUALIZATION PARAMETERS
     debug           = False,
     show_figs       = True,
     oneD_hist       = False,
     twoD_hist       = False,
-    durations_hist  = True,
+    durations_hist  = False,
     capital_curve   = True,
     save_results    = False,
     )
-

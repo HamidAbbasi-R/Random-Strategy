@@ -21,17 +21,22 @@ The results are based on Monte Carlo simulations. The results are based on the a
 The capital curve for the strategy is shown below. The results shown below is for BNB-USD, time frame 5m, total simulation time 8 hours, and a total of 5000 simulations. The purpose is not to show the profitability of the strategy but to make this project reproducible. 
 
 In this example the peak of the capital curve histogram is higher than the initial capital. This means that the strategy was profitable.
-![a](docs/capital_curve_symmetric.png)
+
+<!-- ![a](docs/capital_curve_symmetric.png) -->
+![a](docs/gif.gif)
 
 It should be noted that the mode (peak of the histogram) changes a lot based on the simulations parameters and the time window of the simulation. This is the point where most of the simulations were ended. The mode is the most likely outcome of the strategy. For example, in the image above, the mode is ~$51k, meaning the most probable capital after the simulation time window is ~$1k profit. But before the time window started, we did not know that the mode would be ~$51k. Therefore, the next idea would be to use a more sophisticated method to estimate the behavior of the mode over time.
 
 Let's say all the simulation parameters are kept the same but the time window is marching forward. Naturally the mode of the histogram will change over time. The idea is to understand the behavior of the peak of the histogram over time. The graph of the mode over time is below:
+
 ![a](docs/mode_vs_time.png)
 
 This graph shows the mode of the 4h time windows marching forward for almost two months. As can be seen, the mode is not stable and changes a lot. In the graph the mode is shown alongside with the one standard deviation of the mode. A close look at the graph is shown below:
+
 ![a](docs/mode_vs_time_zoom.png)
 
 The next step would be to understand the behavior of the mode. Here I used the most simple method to estimate the next mode. For this, I used crossover of the mode with different profit levels. The idea is that if the mode crosses (above or below) a certain profit level in a given time window, the strategy will be activated at that time for the next time window. It definitely is not the best method but it is a start. The graph of overall profit vs trigger profit level is shown below:
+
 ![a](docs/overall_vs_trigger.png)
 
 This graph shows that if the mode crosses below the trigger level of -5%, the overall profit will be maximized and will be ~5% for the entire simulation time. However, this project is far from being finished and there are many things to be done. 

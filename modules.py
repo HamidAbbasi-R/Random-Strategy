@@ -62,6 +62,7 @@ def RandomStrategy(
         ADX_condition='trade-above',# ADX condition for trading
         trailing_stop = True,       # trailing stop loss
         cut_off=None,               # cut off values for ending the sessions
+        seed=None,                  # seed for random price data
         indicators=None,            # indicators to use
         random_market=False,        # use random price data
         max_steps=100,              # number of steps for random price data
@@ -107,6 +108,8 @@ def RandomStrategy(
     ADX = indicators['ADX'] if indicators is not None else None
     
     first_trade = True
+    # how to set the seed for np.random
+    np.random.seed(seed) if seed is not None else None
     while step<max_steps:
         if not inTrade:
             # do not trade if ADX cond is not met  
