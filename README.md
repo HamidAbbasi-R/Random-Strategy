@@ -25,7 +25,11 @@ In this example the peak of the capital curve histogram is higher than the initi
 <!-- ![a](docs/capital_curve_symmetric.png) -->
 ![a](docs/gif.gif)
 
-It should be noted that the mode (peak of the histogram) changes a lot based on the simulations parameters and the time window of the simulation. This is the point where most of the simulations were ended. The mode is the most likely outcome of the strategy. For example, in the image above, the mode is ~$51k, meaning the most probable capital after the simulation time window is ~$1k profit. But before the time window started, we did not know that the mode would be ~$51k. Therefore, the next idea would be to use a more sophisticated method to estimate the behavior of the mode over time.
+Duration of each trade in each simulation is monitored. Since tick-based information is not being used, it is important to montor the duration of each trade to make sure that trades are not being closed too early (during the same candle they were opened). If that is the case, the strategy should be tested with tick-based information and these results are not reliable. The plot below, shows the heatmap of the duration of each trade in each simulation. The x-axis is the duration of the trade in number of bars and the y-axis is the simulation number. The color shows the number of trades with a given duration in a given simulation. The red points show the average duration of the trades in each simulation. As can be seen, the average duration of the trades is larger than one bar, which is a good sign moving forward with OHLC data.
+
+![a](docs/trades_duration.png)
+
+It should be noted that the mode (peak of the histogram in the first figure) changes a lot based on the simulations parameters and the time window of the simulation. The histogram mode is the point where most of the simulations ended up. The mode is the most likely outcome of the strategy in that time period with that parameters. For example, in the image above, the mode is ~$51k, meaning the most probable capital after the simulation time window is ~$1k profit. But before the time window started, we did not know that the mode would be ~$51k. Therefore, the next idea would be to use a more sophisticated method to estimate the behavior of the mode over time.
 
 Let's say all the simulation parameters are kept the same but the time window is marching forward. Naturally the mode of the histogram will change over time. The idea is to understand the behavior of the peak of the histogram over time. The graph of the mode over time is below:
 

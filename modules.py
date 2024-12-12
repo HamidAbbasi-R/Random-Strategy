@@ -380,6 +380,7 @@ def create_plots(
                 x = np.arange(np.nanmax(trade_durations[0])+1),
                 y = np.arange(N_test),
                 colorscale='Viridis',
+                colorbar=dict(title='Count'),
                 ))
         
         # find the average trade duration for each test
@@ -389,8 +390,9 @@ def create_plots(
                 x=average_trade_duration,
                 y=np.arange(N_test),
                 mode='markers',
-                marker=dict(color='red'),
-                showlegend=False,
+                marker=dict(color='red', size=3),
+                showlegend=True,
+                name='Average trade duration',
                 ))
 
         fig_trade_duration.update_layout(
@@ -398,6 +400,11 @@ def create_plots(
             xaxis_title='Trade duration [bars]',
             yaxis_title='Test number',
             template=theme,
+            legend=dict(
+                orientation="h",
+                y = 1.1,
+                x = 0,
+                ),
             )
         fig_trade_duration.show()
 

@@ -7,7 +7,7 @@ single_simulation(
     duration = '8h',
     interval = '5m',
     initial_capital = 50000,        # initial capital in USD
-    N_test = 5000,
+    N_test = 500,
     RRR = 2,
     risk_per_trade = 0.5,
     P_win = 0.5,
@@ -22,7 +22,7 @@ single_simulation(
     show_figs       = True,
     oneD_hist       = False,
     twoD_hist       = False,
-    durations_hist  = False,
-    capital_curve   = True,
+    durations_hist  = True,
+    capital_curve   = False,
     save_results    = False,
     )
